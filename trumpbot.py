@@ -16,7 +16,7 @@ def sample_from_choices(choices):
 
 
 def clean_up_tt(tweet):
-    tweet = tweet.replace("’", "'").replace("“", '"').replace("”", '"')
+    tweet = tweet.replace("’", "'").replace("“", '"').replace("”", '"').replace("U.S.A.", "USA")
     return tweet
 
 
@@ -78,6 +78,11 @@ class MCCorpus:
         words = [w for w in words if w not in self.exclusion]
         if self.filter_out_url:
             words = [w for w in words if "https" not in w]
+
+        # replacements. This is ugly and hacky, fix in a later version.
+        for j, word in enumerate(words):
+            if word == 'USA':
+                words[j] = 'U.S.A.'
         return words
 
     def fit(self, text_list):
