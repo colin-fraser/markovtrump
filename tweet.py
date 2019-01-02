@@ -48,5 +48,6 @@ if __name__ == '__main__':
     corpus.fit(tweettext)
     for i in range(min(n_new_tweets, MAX_TWEETS)):
         tweet = build_tweet(corpus)
-        print(send_tweet(tweet, api))
+        sent = send_tweet(tweet, api)
+        print(tweet.formatted)
     save_tweet_id_record(timeline)
