@@ -16,7 +16,13 @@ def sample_from_choices(choices):
 
 
 def clean_up_tt(tweet):
-    tweet = tweet.replace("’", "'").replace("“", '"').replace("”", '"').replace("U.S.A.", "USA")
+    tweet = tweet.replace("’", "'")  # backtick
+    tweet = tweet.replace("“", '"')  # left/right quotes
+    tweet = tweet.replace("”", '"')  # left/right quotes
+    tweet = tweet.replace("U.S.A.", "USA")
+    tweet = tweet.replace("U.S.", "US")
+    tweet = tweet.replace("…", "")
+
     return tweet
 
 
@@ -83,6 +89,8 @@ class MCCorpus:
         for j, word in enumerate(words):
             if word == 'USA':
                 words[j] = 'U.S.A.'
+            if word == 'US':
+                words[j] = 'U.S.'
         return words
 
     def fit(self, text_list):
