@@ -32,20 +32,27 @@ def save_tweet_id_record(timeline):
 
 if __name__ == '__main__':
 
+    ### agparse stuff
     parser = argparse.ArgumentParser()
     parser.add_argument("--phone", "-p")
-
+    parser.add_argument("--force", "-f")
     phone = parser.parse_args().phone
+    force = parser.parse_args().force  # force a tweet
 
+    ### auth stuff
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
     api = tweepy.API(auth)
+
+    ### main stuff
     timeline = api.user_timeline(SOURCE_READER_ID, count=CORPUS_SIZE, tweet_mode='extended')
     if not path.exists(LOCAL_TWEETS):
         save_tweet_id_record(timeline)
     with open(LOCAL_TWEETS) as f:
         local_tweets = json.load(f)
     n_new_tweets = len([t for t in timeline if t.id not in local_tweets])
+    if force:
+        n_new_tweets += 1
     print("%i new tweets found" % n_new_tweets)
     tweettext = [t.full_text for t in timeline]
     print("%i tweets retrieved" % len(tweettext))
