@@ -4,25 +4,25 @@ from secrets import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SE
 from trumpbot import MCCorpus
 from os import path
 import argparse
-import boto3
 
 
 CORPUS_SIZE = 200
-
 MAX_TWEETS = 10
 SOURCE_READER_ID = "realDonaldTrump"
 LOCAL_TWEETS = path.expanduser("~/tweets.json")
 
 
-def build_tweet(corpus: MCCorpus, redraw_if=["...", ".", "$", "\"", "'", "RT"]):
+def build_tweet(corpus: MCCorpus, reply_id=None, redraw_if=["...", ".", "$", "\"", "'", "RT"]):
     tweet = corpus.predict()
     while tweet[1] in redraw_if:  # redraw if the first token is not what we want
         tweet = corpus.predict()
     return tweet
 
 
-def send_tweet(tweet, api: tweepy.API):
-    return api.update_status(tweet.formatted)
+def send_tweet(tweet, api: tweepy.API, in_reply_to_status_id=None, 
+               auto_populate_reply_metadata=False):
+    return api.update_status(status=tweet.formatted, in_reply_to_status_id=in_reply_to_status_id,
+                             auto_populate_reply_metadata=auto_populate_reply_metadata)
 
 
 def save_tweet_id_record(timeline):
@@ -34,9 +34,7 @@ if __name__ == '__main__':
 
     ### agparse stuff
     parser = argparse.ArgumentParser()
-    parser.add_argument("--phone", "-p")
-    parser.add_argument("--force", "-f")
-    phone = parser.parse_args().phone
+    parser.add_argument("--force", "-f", action="store_const", const=True)
     force = parser.parse_args().force  # force a tweet
 
     ### auth stuff
@@ -61,14 +59,15 @@ if __name__ == '__main__':
     corpus.fit(tweettext)
 
     if n_new_tweets > 0:
-        if phone:
-            print("Connecting to AWS")
-            texter = boto3.client("sns")
-        for i in range(min(n_new_tweets, MAX_TWEETS)):
-            tweet = build_tweet(corpus)
-            sent = send_tweet(tweet, api)
+        tweets_to_send = min(n_new_tweets, MAX_TWEETS)
+        for i in range(tweets_to_send):
+            reply_id = None
+            auto_populate_reply_metadata = False
+            if i == tweets_to_send:
+                reply_id = timeline[-1].id
+                print("Repling to %s" % reply_id)
+            tweet = build_tweet(corpus, reply_id, auto_populate_reply_metadata)
+            sent = send_tweet(tweet, api, in_reply_to_status_id=reply_id,
+                    auto_populate_reply_metadata=auto_populate_reply_metadata)
             print(tweet.formatted)
-            if phone:
-                print("Sending text notification")
-                texter.publish(PhoneNumber=phone, Message="TWEET: %s" % tweet.formatted)
         save_tweet_id_record(timeline)
